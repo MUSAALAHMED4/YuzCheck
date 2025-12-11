@@ -23,3 +23,8 @@ export const getSummary = async () => {
   const { data } = await client.get("/api/attendance/summary");
   return data;
 };
+
+export const getLatestRecognition = async () => {
+  const { data } = await client.get("/api/attendance/latest");
+  return data;
+};

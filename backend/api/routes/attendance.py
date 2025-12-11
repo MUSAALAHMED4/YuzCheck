@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import logging
 from typing import List
 
 from fastapi import APIRouter, HTTPException
@@ -16,6 +17,7 @@ from backend.models.attendance_models import (
 from backend.services.attendance_service import AttendanceService
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.post("/run", response_model=AttendanceRunResult)
@@ -84,3 +86,23 @@ def run_attendance_live(req: AttendanceLiveRequest) -> AttendanceRunResult:
 
     rec_entries: List[RecognizedEntry] = [RecognizedEntry(name=n, timestamp=t) for n, t in recognized]
     return AttendanceRunResult(recognized=rec_entries, present=present, absent=absent)
+
+
+@router.get("/latest")
+def get_latest_recognition():
+    """Get the latest recognized person from the attendance log"""
+    import pandas as pd
+    try:
+        if os.path.exists(CONFIG.attendance_log_xlsx):
+            df = pd.read_excel(CONFIG.attendance_log_xlsx)
+            if not df.empty and 'Name' in df.columns and 'Timestamp' in df.columns:
+                # Get the last row
+                latest = df.iloc[-1]
+                return {
+                    "name": str(latest['Name']),
+                    "timestamp": str(latest['Timestamp'])
+                }
+        return {"name": None, "timestamp": None}
+    except Exception as e:
+        logger.error(f"Error reading latest recognition: {e}")
+        return {"name": None, "timestamp": None}

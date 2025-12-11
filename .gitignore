@@ -1,0 +1,19 @@
+# Ignore Python virtual environment
+.venv/
+
+# Ignore large weights and model files
+face_detection/yolov5_face/weights/yolov5m-face.pt
+face_recognition/arcface/weights/arcface_r100.pth
+
+# Ignore other large files
+*.dylib
+
+# Mac system files
+.DS_Store
+
+# Python cache
+__pycache__/
+
+# Temporary video files
+backend/data/tmp/
+

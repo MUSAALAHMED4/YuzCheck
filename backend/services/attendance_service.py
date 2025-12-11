@@ -62,7 +62,7 @@ class AttendanceService:
             self.rec = RecognitionService(min_score=recognition_min_score)
 
         min_face_size = min_face_size or CONFIG.min_face_size
-        cooldown_seconds = cooldown_seconds or CONFIG.cooldown_seconds
+        cooldown_seconds = cooldown_seconds if cooldown_seconds is not None else 30
 
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
@@ -149,7 +149,7 @@ class AttendanceService:
             self.rec = RecognitionService(min_score=recognition_min_score)
 
         min_face_size = min_face_size or CONFIG.min_face_size
-        cooldown_seconds = cooldown_seconds or CONFIG.cooldown_seconds
+        cooldown_seconds = cooldown_seconds if cooldown_seconds is not None else 30
         max_seconds = max_seconds or 30
 
         cap = cv2.VideoCapture(0)
