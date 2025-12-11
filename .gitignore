@@ -48,3 +48,5 @@ build/
 # Images folders (if generated)
 # -------------------------
 images/.DS_Store
+face_recognition/arcface/weights/
+face_recognition/arcface/weights/arcface_r100.pth
