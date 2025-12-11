@@ -46,7 +46,7 @@ for filename in os.listdir(extract_dir):
         # Dosya adından öğrenci numarasını çıkar
         student_number = "".join(filter(str.isdigit, filename)).strip()  # Sadece rakamları al
         
-        print(f"🔍 Fotoğraf inceleniyor: {filename} | Çıkarılan öğrenci numarası: {student_number}")
+        print(f"  Fotoğraf inceleniyor: {filename} | Çıkarılan öğrenci numarası: {student_number}")
         
         if student_number in student_dict:
             correct_name = student_dict[student_number]  # Doğru ismi al

@@ -62,7 +62,11 @@ class AttendanceService:
             self.rec = RecognitionService(min_score=recognition_min_score)
 
         min_face_size = min_face_size or CONFIG.min_face_size
-        cooldown_seconds = cooldown_seconds if cooldown_seconds is not None else 30
+        # Enforce minimum cooldown of 30 seconds
+        if cooldown_seconds is None:
+            cooldown_seconds = 30
+        else:
+            cooldown_seconds = max(30, int(cooldown_seconds))
 
         cap = cv2.VideoCapture(video_path)
         if not cap.isOpened():
@@ -108,10 +112,16 @@ class AttendanceService:
                                 else:
                                     dfnew = pd.DataFrame({"Name": [name], "Timestamp": [ts]})
                                 dfnew.to_excel(excel_file, index=False)
+                                # Save face image
+                                detected_dir = os.path.join(os.path.dirname(CONFIG.tmp_dir), "detected_faces")
+                                os.makedirs(detected_dir, exist_ok=True)
+                                face_path = os.path.join(detected_dir, "latest.jpg")
+                                cv2.imwrite(face_path, face)
                             except Exception as e:
-                                logger.warning("Excel write failed: %s", e)
+                                logger.warning("Excel write or face save failed: %s", e)
                             last_logged_times[name] = datetime.now()
-                        recognized.append((name, ts))
+                            # Only mark recognized when a log entry is created (outside cooldown)
+                            recognized.append((name, ts))
         finally:
             cap.release()
 
@@ -149,7 +159,11 @@ class AttendanceService:
             self.rec = RecognitionService(min_score=recognition_min_score)
 
         min_face_size = min_face_size or CONFIG.min_face_size
-        cooldown_seconds = cooldown_seconds if cooldown_seconds is not None else 30
+        # Enforce minimum cooldown of 30 seconds
+        if cooldown_seconds is None:
+            cooldown_seconds = 30
+        else:
+            cooldown_seconds = max(30, int(cooldown_seconds))
         max_seconds = max_seconds or 30
 
         cap = cv2.VideoCapture(0)
@@ -197,10 +211,16 @@ class AttendanceService:
                                 else:
                                     dfnew = pd.DataFrame({"Name": [name], "Timestamp": [ts]})
                                 dfnew.to_excel(excel_file, index=False)
+                                # Save latest face image for thumbnail
+                                detected_dir = os.path.join(os.path.dirname(CONFIG.tmp_dir), "detected_faces")
+                                os.makedirs(detected_dir, exist_ok=True)
+                                face_path = os.path.join(detected_dir, "latest.jpg")
+                                cv2.imwrite(face_path, face)
                             except Exception as e:
-                                logger.warning("Excel write failed: %s", e)
+                                logger.warning("Excel write or face save failed: %s", e)
                             last_logged_times[name] = datetime.now()
-                        recognized.append((name, ts))
+                            # Only mark recognized when a log entry is created (outside cooldown)
+                            recognized.append((name, ts))
         finally:
             cap.release()
 

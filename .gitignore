@@ -1,19 +1,50 @@
-# Ignore Python virtual environment
+# -------------------------
+# Python virtual environment
+# -------------------------
 .venv/
+env/
+venv/
 
-# Ignore large weights and model files
-face_detection/yolov5_face/weights/yolov5m-face.pt
-face_recognition/arcface/weights/arcface_r100.pth
-
-# Ignore other large files
-*.dylib
-
-# Mac system files
-.DS_Store
-
+# -------------------------
 # Python cache
+# -------------------------
 __pycache__/
+*.pyc
 
-# Temporary video files
+# -------------------------
+# Face detection/recognition weights
+# -------------------------
+face_detection/yolov5_face/weights/*.pt
+face_recognition/arcface/weigths/*.pth
+
+# -------------------------
+# Mac system files
+# -------------------------
+.DS_Store
+*/.DS_Store
+
+# -------------------------
+# Temporary or generated data
+# -------------------------
 backend/data/tmp/
+backend/data/excel/*.xlsx
+backend/data/detected_faces/
 
+# -------------------------
+# Large / unwanted binaries
+# -------------------------
+*.dylib
+*.so
+*.pkl
+
+# -------------------------
+# Node / React frontend
+# -------------------------
+node_modules/
+dist/
+build/
+
+# -------------------------
+# Images folders (if generated)
+# -------------------------
+images/.DS_Store

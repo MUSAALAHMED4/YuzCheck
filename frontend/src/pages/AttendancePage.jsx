@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from "react";
+import LatestRecognitionCard from "../components/LatestRecognitionCard";
 import {
   uploadVideo,
   runAttendanceLive,
   getLatestRecognition,
 } from "../api/attendanceApi";
+import AttendanceTable from "../components/AttendanceTable";
+import AbsenceTable from "../components/AbsenceTable";
 
 export default function AttendancePage() {
   const [file, setFile] = useState(null);
@@ -13,6 +16,8 @@ export default function AttendancePage() {
   const [showSummary, setShowSummary] = useState(false);
   const [latestRecognition, setLatestRecognition] = useState(null);
   const [isMonitoring, setIsMonitoring] = useState(false);
+  const videoRef = React.useRef(null);
+  const streamRef = React.useRef(null);
 
   // Fetch latest recognition every 2 seconds when monitoring
   useEffect(() => {
@@ -59,64 +64,121 @@ export default function AttendancePage() {
     }
   };
 
+  // Setup local webcam preview during processing
+  useEffect(() => {
+    const setupCamera = async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: "user" },
+          audio: false,
+        });
+        streamRef.current = stream;
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream;
+          await videoRef.current.play();
+        }
+      } catch (err) {
+        console.error("Failed to open webcam preview:", err);
+      }
+    };
+    if (loading) {
+      setupCamera();
+    }
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+        } catch {}
+        videoRef.current.srcObject = null;
+      }
+    };
+  }, [loading]);
+
   return (
     <div style={{ display: "flex", gap: "16px" }}>
       {/* Main Content */}
       <div style={{ flex: 1 }}>
         <div className="card">
-          <h2>اختيار فيديو (اختياري)</h2>
-          <input
-            type="file"
-            accept="video/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
-          <div style={{ marginTop: 8 }}>
-            <button
-              className="btn"
-              onClick={handleUpload}
-              disabled={!file || loading}
-            >
-              رفع الفيديو
-            </button>
-          </div>
-          {videoInfo && <p>تم الرفع: {videoInfo.path}</p>}
-        </div>
-        <div className="card">
           <h2>أخذ الحضور من الكاميرا</h2>
           <button className="btn" onClick={handleRun} disabled={loading}>
             بدء
           </button>
-          {loading && <p>Processing…</p>}
+          {loading && (
+            <div style={{ marginTop: 12 }}>
+              {/* Webcam Preview - full width */}
+              <div
+                style={{
+                  position: "relative",
+                  width: "100%",
+                  maxWidth: 600,
+                  height: 320,
+                  borderRadius: 18,
+                  overflow: "hidden",
+                  border: "2.5px solid #2563eb",
+                  boxShadow: "0 6px 32px 0 rgba(37,99,235,0.10)",
+                  background:
+                    "linear-gradient(135deg, #1e293b 0%, #2563eb 100%)",
+                  margin: "0 auto",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <video
+                  ref={videoRef}
+                  muted
+                  playsInline
+                  style={{
+                    width: "98%",
+                    height: "96%",
+                    objectFit: "cover",
+                    background: "#0b1220",
+                    borderRadius: "14px",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.10)",
+                  }}
+                />
+                <div
+                  style={{
+                    position: "absolute",
+                    bottom: 0,
+                    left: 0,
+                    width: "100%",
+                    padding: "12px 0 8px 0",
+                    background:
+                      "linear-gradient(0deg, #181a20 80%, transparent 100%)",
+                    textAlign: "center",
+                    fontSize: 15,
+                    color: "#fff",
+                    fontWeight: 600,
+                    letterSpacing: "0.5px",
+                    textShadow: "0 2px 8px rgba(37,99,235,0.15)",
+                    borderBottomLeftRadius: 18,
+                    borderBottomRightRadius: 18,
+                  }}
+                >
+                  ضع وجهك داخل الإطار ليتم التعرف عليه
+                </div>
+              </div>
+            </div>
+          )}
         </div>
         {result && (
-          <div className="row">
-            <div className="card" style={{ flex: 1 }}>
-              <h3>Recognized</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Name</th>
-                    <th>Timestamp</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {result.recognized.map((r, idx) => (
-                    <tr key={idx}>
-                      <td>{r.name}</td>
-                      <td>{r.timestamp}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="card" style={{ flex: 1 }}>
-              <h3>Absent</h3>
-              <ul>
-                {result.absent.map((n) => (
-                  <li key={n}>{n}</li>
-                ))}
-              </ul>
-            </div>
+          <div
+            style={{
+              display: "flex",
+              gap: "18px",
+              marginTop: 18,
+              justifyContent: "center",
+            }}
+          >
+            {/* جدول الحضور */}
+            <AttendanceTable recognized={result.recognized} />
+            {/* جدول الغياب */}
+            <AbsenceTable absent={result.absent} />
           </div>
         )}
 
@@ -177,110 +239,10 @@ export default function AttendancePage() {
       </div>
 
       {/* Sidebar - Latest Recognition */}
-      <div
-        className="card"
-        style={{
-          width: "320px",
-          position: "sticky",
-          top: "24px",
-          height: "fit-content",
-          background: "#f8fafc",
-          border: "1.5px solid #2563eb",
-          boxShadow: "0 4px 16px rgba(37,99,235,0.08)",
-          borderRadius: "16px",
-          padding: "20px 18px 18px 18px",
-          zIndex: 10,
-        }}
-      >
-        <h3
-          style={{
-            marginTop: 0,
-            marginBottom: 18,
-            color: "#2563eb",
-            fontWeight: 700,
-            fontSize: "20px",
-            letterSpacing: "0.5px",
-          }}
-        >
-          آخر وجه تم التعرف عليه
-        </h3>
-        {isMonitoring && (
-          <div
-            style={{
-              padding: "7px 0",
-              background: "#2563eb",
-              color: "#fff",
-              borderRadius: "6px",
-              marginBottom: "14px",
-              textAlign: "center",
-              fontSize: "15px",
-              fontWeight: 500,
-              boxShadow: "0 2px 8px rgba(37,99,235,0.10)",
-              letterSpacing: "0.5px",
-            }}
-          >
-            <span style={{ fontSize: "16px", marginRight: "6px" }}>🔴</span>{" "}
-            مراقبة نشطة
-          </div>
-        )}
-        {latestRecognition && latestRecognition.name ? (
-          <div>
-            <div
-              style={{
-                padding: "18px 12px 14px 12px",
-                background: "#e0e7ff",
-                borderRadius: "10px",
-                marginBottom: "14px",
-                boxShadow: "0 2px 8px rgba(37,99,235,0.07)",
-                textAlign: "center",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: "22px",
-                  fontWeight: "bold",
-                  color: "#1e293b",
-                  marginBottom: "7px",
-                  wordBreak: "break-all",
-                  letterSpacing: "0.5px",
-                }}
-              >
-                {latestRecognition.name}
-              </div>
-              <div
-                style={{ fontSize: "15px", color: "#334155", fontWeight: 500 }}
-              >
-                {latestRecognition.timestamp}
-              </div>
-            </div>
-            <div
-              style={{
-                fontSize: "13px",
-                color: "#2563eb",
-                textAlign: "center",
-                fontWeight: 500,
-                letterSpacing: "0.3px",
-              }}
-            >
-              يتم التحديث تلقائياً
-            </div>
-          </div>
-        ) : (
-          <div
-            style={{
-              padding: "36px 0",
-              textAlign: "center",
-              color: "#64748b",
-              fontSize: "15px",
-              fontWeight: 500,
-            }}
-          >
-            {isMonitoring
-              ? "في انتظار التعرف على وجه..."
-              : "لا توجد بيانات بعد"}
-          </div>
-        )}
-      </div>
+      <LatestRecognitionCard
+        latestRecognition={latestRecognition}
+        isMonitoring={isMonitoring}
+      />
     </div>
   );
 }

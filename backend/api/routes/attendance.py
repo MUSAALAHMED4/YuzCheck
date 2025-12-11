@@ -93,6 +93,11 @@ def get_latest_recognition():
     """Get the latest recognized person from the attendance log"""
     import pandas as pd
     try:
+        image_url = None
+        detected_dir = os.path.join(os.path.dirname(CONFIG.tmp_dir), "detected_faces")
+        face_path = os.path.join(detected_dir, "latest.jpg")
+        if os.path.exists(face_path):
+            image_url = "/static/detected/latest.jpg"
         if os.path.exists(CONFIG.attendance_log_xlsx):
             df = pd.read_excel(CONFIG.attendance_log_xlsx)
             if not df.empty and 'Name' in df.columns and 'Timestamp' in df.columns:
@@ -100,9 +105,10 @@ def get_latest_recognition():
                 latest = df.iloc[-1]
                 return {
                     "name": str(latest['Name']),
-                    "timestamp": str(latest['Timestamp'])
+                    "timestamp": str(latest['Timestamp']),
+                    "image_url": image_url
                 }
-        return {"name": None, "timestamp": None}
+        return {"name": None, "timestamp": None, "image_url": image_url}
     except Exception as e:
         logger.error(f"Error reading latest recognition: {e}")
-        return {"name": None, "timestamp": None}
+        return {"name": None, "timestamp": None, "image_url": None}
